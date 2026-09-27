@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "neon-snake3"
+version = "1.0.0"
+description = "A polished, offline classic Snake game"
+requires-python = ">=3.11"
+dependencies = ["pygame-ce==2.5.8"]
+
+[project.gui-scripts]
+neon-snake = "snake3.app:main"
+
+[tool.setuptools.packages.find]
+include = ["snake3*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
