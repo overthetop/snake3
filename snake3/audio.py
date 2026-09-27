@@ -75,7 +75,7 @@ class Audio:
             pass
 
     def levels(self, music: float, effects: float, quiet: bool = False):
-        if self.available:
+        if self.available and self.music_channel is not None:
             self.music_channel.set_volume(music * (0.4 if quiet else 1))
             for sound in self.sounds.values():
                 sound.set_volume(effects)

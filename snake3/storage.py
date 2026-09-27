@@ -41,7 +41,8 @@ class Store:
                 self.prefs.best = best
             for key in ("music", "effects"):
                 value = raw.get(key)
-                if type(value) in (float, int) and math.isfinite(value):
+                # Integers are always finite; converting a huge one to float can overflow.
+                if type(value) is int or (type(value) is float and math.isfinite(value)):
                     setattr(self.prefs, key, max(0.0, min(1.0, value)))
             if type(raw.get("reduced")) is bool:
                 self.prefs.reduced = raw["reduced"]

@@ -45,6 +45,8 @@ jobs:
         env:
           SDL_VIDEODRIVER: dummy
           SDL_AUDIODRIVER: dummy
+      - name: Check Python types
+        run: python -m mypy
       - name: Build and smoke-test standalone app
         run: python scripts/build.py
       - name: Upload standalone download
