@@ -1,6 +1,20 @@
 import json
+import pytest
 
 from snake3.storage import Store
+
+
+@pytest.mark.parametrize("setting", ["music", "effects"])
+@pytest.mark.parametrize("value, expected", [(10**400, 1), (-10**400, 0)],
+                         ids=["oversized-positive", "oversized-negative"])
+def test_oversized_volume_recovers_and_can_be_saved(tmp_path, setting, value, expected):
+    path = tmp_path / "settings.json"
+    path.write_text(json.dumps({"best": 120, "reduced": True, setting: value}))
+    store = Store(path)
+    assert getattr(store.prefs, setting) == expected
+    assert store.prefs.best == 120 and store.prefs.reduced
+    assert store.save()
+    assert getattr(Store(path).prefs, setting) == expected
 
 
 def test_save_survives_restart(tmp_path):

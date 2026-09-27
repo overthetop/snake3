@@ -28,3 +28,7 @@ For each archive, record the commit, OS version, hardware, tester and date:
 - Confirm a full-board win using an automated rules test; do not require a human to fill all 576 cells.
 
 Signing/notarization is a separate distribution step; this project does not include private signing credentials.
+
+## Follow-up automated validation
+
+Tickets 01–02 add oversized-preference recovery and targeted application checks for interruptions, fullscreen transitions, missing audio devices, reduced effects, and full-board win/restart. The local suite now passes 31 tests, and typechecking passes for all six application modules. The smoke test now also emits countdown, reduced-effects, and win screenshots. These results do not replace the real-device observations requested in tickets 03–06, which are ready for human testers.

@@ -51,6 +51,7 @@ Using the virtual environment's Python:
 
 ```sh
 python -m pytest -q
+python -m mypy
 python run_game.py --smoke-test artifacts/smoke
 python scripts/build.py
 ```

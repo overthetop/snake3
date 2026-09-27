@@ -18,3 +18,8 @@ include = ["snake3*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.mypy]
+files = ["snake3"]
+check_untyped_defs = true
+ignore_missing_imports = true

@@ -41,8 +41,8 @@ class App:
                                               pygame.HIDDEN if hidden else pygame.RESIZABLE)
         pygame.display.set_caption("Neon Snake")
         self.canvas = pygame.Surface((WIDTH, HEIGHT)).convert()
-        self.fonts = {}
-        self.text_cache = {}
+        self.fonts: dict[int, pygame.font.Font] = {}
+        self.text_cache: dict[tuple[str, int, tuple[int, int, int]], pygame.Surface] = {}
         self.clock = pygame.time.Clock()
         self.store = Store(save_path)
         self.audio = Audio()
@@ -55,8 +55,8 @@ class App:
         self.countdown = 0.0
         self.elapsed = 0.0
         self.flash = 0.0
-        self.particles = []
-        self.buttons = []
+        self.particles: list[list[float]] = []
+        self.buttons: list[tuple[pygame.Rect, str]] = []
         self.mouse = (-1, -1)
         self.focused = True
         self.running = True
@@ -317,8 +317,8 @@ class App:
                                BOARD.y + (py + (y - py) * blend + 0.5) * CELL))
             direction = self.game.direction
         if not self.store.prefs.reduced:
-            for x, y in points[::2]:
-                self.canvas.blit(self.glow, (x - 50, y - 50), special_flags=pygame.BLEND_RGB_ADD)
+            for glow_x, glow_y in points[::2]:
+                self.canvas.blit(self.glow, (glow_x - 50, glow_y - 50), special_flags=pygame.BLEND_RGB_ADD)
         color = CORAL if self.state == "over" and not self.game.won else TEAL
         for i, p in reversed(list(enumerate(points))):
             t = 1 - i / len(points)
@@ -495,6 +495,8 @@ def smoke_test(output: Path):
             app.event(pygame.event.Event(pygame.WINDOWFOCUSGAINED))
             app.event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_RETURN))
             assert app.state == "countdown"
+            app.draw()
+            pygame.image.save(app.canvas, str(output / "countdown.png"))
             app.update(3.1)
             assert app.state == "playing"
             app.activate("settings")
@@ -511,7 +513,26 @@ def smoke_test(output: Path):
             app.start()
             assert app.game.score == 0 and app.store.prefs.best == 10
             assert Store(app.store.path).prefs.best == 10
-            (output / "smoke-ok.txt").write_text("Rendering, input, audio initialization, pause, resume, collision, restart and save passed.\n", encoding="utf-8")
+            app.activate("reduced")
+            app.draw()
+            pygame.image.save(app.canvas, str(output / "reduced-effects.png"))
+            # A nearly full, contiguous snake makes the win reachable in one
+            # normal update; do not bypass the application's win transition.
+            path = [(x, y) for y in range(24)
+                    for x in (range(24) if y % 2 == 0 else range(23, -1, -1))]
+            app.game.snake = path[1:]
+            app.game.previous = app.game.snake.copy()
+            app.game.direction = Direction.LEFT
+            app.game.food = (0, 0)
+            app.game.score = 5710
+            app.update(1 / 12)
+            assert app.state == "over" and app.game.won and app.game.score == 5720
+            app.draw()
+            pygame.image.save(app.canvas, str(output / "win.png"))
+            app.event(pygame.event.Event(pygame.KEYDOWN, key=pygame.K_RETURN))
+            assert app.state == "playing" and app.game.score == 0
+            assert Store(app.store.path).prefs.best == 5720
+            (output / "smoke-ok.txt").write_text("Rendering, input, audio initialization, pause, resume, collision, win, restart and save passed.\n", encoding="utf-8")
         finally:
             pygame.quit()
 
