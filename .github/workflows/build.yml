@@ -1,0 +1,62 @@
+name: Desktop builds
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            target: windows-x64
+          - os: ubuntu-22.04
+            target: linux-x64
+          - os: macos-15
+            target: macos-arm64
+          - os: macos-15-intel
+            target: macos-x64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Test rules, input, rendering and persistence
+        run: python -m pytest -q
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+      - name: Build and smoke-test standalone app
+        run: python scripts/build.py
+      - name: Upload standalone download
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeonSnake-${{ matrix.target }}
+          path: dist/archives/*
+          if-no-files-found: error
+      - name: Upload rendered verification screens
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-${{ matrix.target }}
+          path: artifacts/packaged-*
+          if-no-files-found: ignore
