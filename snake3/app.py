@@ -470,6 +470,8 @@ class App:
 
 def smoke_test(output: Path):
     """Exercise packaged rendering, audio and input without touching player saves."""
+    from .validation import almost_full_board
+
     output.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory() as directory:
         app = App(Path(directory) / "settings.json", hidden=True)
@@ -481,6 +483,8 @@ def smoke_test(output: Path):
             app.game.food = (app.game.snake[0][0] + 1, app.game.snake[0][1])
             app.update(1 / 6)
             assert app.game.score == 10
+            # Keep the next food off the scripted route to the right-hand wall.
+            app.game.food = (0, 0)
             for _ in range(8):
                 app.update(1 / 120)
             app.draw()
@@ -518,13 +522,7 @@ def smoke_test(output: Path):
             pygame.image.save(app.canvas, str(output / "reduced-effects.png"))
             # A nearly full, contiguous snake makes the win reachable in one
             # normal update; do not bypass the application's win transition.
-            path = [(x, y) for y in range(24)
-                    for x in (range(24) if y % 2 == 0 else range(23, -1, -1))]
-            app.game.snake = path[1:]
-            app.game.previous = app.game.snake.copy()
-            app.game.direction = Direction.LEFT
-            app.game.food = (0, 0)
-            app.game.score = 5710
+            app.game = almost_full_board()
             app.update(1 / 12)
             assert app.state == "over" and app.game.won and app.game.score == 5720
             app.draw()

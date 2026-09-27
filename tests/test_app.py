@@ -1,5 +1,6 @@
 import os
 import json
+import random
 from types import SimpleNamespace
 
 os.environ["SDL_VIDEODRIVER"] = "dummy"
@@ -10,6 +11,7 @@ import pytest
 
 from snake3.app import App, BOARD, CELL, smoke_test
 from snake3.model import Direction
+from snake3.validation import almost_full_board
 
 
 @pytest.fixture
@@ -198,13 +200,7 @@ def test_reduced_effects_removes_glow_and_pulse_without_changing_rules(app):
 
 def test_full_board_win_scores_and_keyboard_restart_keeps_best(app):
     key(app, pygame.K_RETURN)
-    path = [(x, y) for y in range(24)
-            for x in (range(24) if y % 2 == 0 else range(23, -1, -1))]
-    app.game.snake = path[1:]
-    app.game.previous = app.game.snake.copy()
-    app.game.direction = Direction.LEFT
-    app.game.food = (0, 0)
-    app.game.score = 5710
+    app.game = almost_full_board()
     app.update(1 / 12)
     assert app.state == "over" and app.game.won
     assert app.game.score == 5720 and app.store.prefs.best == 5720
@@ -215,7 +211,14 @@ def test_full_board_win_scores_and_keyboard_restart_keeps_best(app):
     assert len(app.game.snake) == 4 and app.store.prefs.best == 5720
 
 
-def test_smoke_produces_countdown_and_win_evidence(tmp_path):
+@pytest.mark.parametrize("respawn", [(14, 12), (23, 12), (0, 0)],
+                         ids=["next-cell", "before-wall", "off-route"])
+def test_smoke_produces_countdown_and_win_evidence(tmp_path, monkeypatch, respawn):
+    # Control randomness at its system boundary, leaving the real game intact.
+    def choose_food(self, free_cells):
+        return respawn if respawn in free_cells else free_cells[0]
+
+    monkeypatch.setattr(random.Random, "choice", choose_food)
     smoke_test(tmp_path)
     for name in ("countdown.png", "win.png", "reduced-effects.png"):
         assert (tmp_path / name).is_file()
